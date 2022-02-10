@@ -1,0 +1,95 @@
+diff --git a/subprojects/packagefiles/glibc-2.34/build-2.34-on-ubuntu22.04.patch b/subprojects/packagefiles/glibc-2.34/build-2.34-on-ubuntu22.04.patch
+new file mode 100644
+index 0000000000000000000000000000000000000000..51d97807bd708e1b2a306389597bc41828c728ee
+--- /dev/null
++++ b/subprojects/packagefiles/glibc-2.34/build-2.34-on-ubuntu22.04.patch
+@@ -0,0 +1,77 @@
++diff --git a/Makefile b/Makefile
++index f98d5a9e6737897aa649511dd3ecfbd6da7772d0..9ef82ce05674c466ddfebcbfd64b1f6f4ba50d20 100644
++--- a/Makefile
+++++ b/Makefile
++@@ -582,12 +582,6 @@ endef
++ # (which we do not build) that GCC-compiled programs depend on.
++ 
++ 
++-ifeq (,$(CXX))
++-LINKS_DSO_PROGRAM = links-dso-program-c
++-else
++-LINKS_DSO_PROGRAM = links-dso-program
++-endif
++-
++ $(tests-container) $(addsuffix /tests,$(subdirs)) : \
++ 		$(objpfx)testroot.pristine/install.stamp
++ $(objpfx)testroot.pristine/install.stamp :
++@@ -602,27 +596,6 @@ $(objpfx)testroot.pristine/install.stamp :
++ 	cp $(objpfx)support/shell-container $(objpfx)testroot.pristine/bin/sh
++ 	cp $(objpfx)support/echo-container $(objpfx)testroot.pristine/bin/echo
++ 	cp $(objpfx)support/true-container $(objpfx)testroot.pristine/bin/true
++-ifeq ($(run-built-tests),yes)
++-	# Copy these DSOs first so we can overwrite them with our own.
++-	for dso in `$(test-wrapper-env) LD_TRACE_LOADED_OBJECTS=1  \
++-		$(rtld-prefix) \
++-		$(objpfx)testroot.pristine/bin/sh \
++-	        | sed -n '/\//{s@.*=> /@/@;s/^[^/]*//;s/ .*//p;}'` ;\
++-	  do \
++-	    test -d `dirname $(objpfx)testroot.pristine$$dso` || \
++-	      mkdir -p `dirname $(objpfx)testroot.pristine$$dso` ;\
++-	    $(test-wrapper) cp $$dso $(objpfx)testroot.pristine$$dso ;\
++-	  done
++-	for dso in `$(test-wrapper-env) LD_TRACE_LOADED_OBJECTS=1  \
++-		$(rtld-prefix) \
++-		$(objpfx)support/$(LINKS_DSO_PROGRAM) \
++-	        | sed -n '/\//{s@.*=> /@/@;s/^[^/]*//;s/ .*//p;}'` ;\
++-	  do \
++-	    test -d `dirname $(objpfx)testroot.pristine$$dso` || \
++-	      mkdir -p `dirname $(objpfx)testroot.pristine$$dso` ;\
++-	    $(test-wrapper) cp $$dso $(objpfx)testroot.pristine$$dso ;\
++-	  done
++-endif
++ 	# $(symbolic-link-list) is a file that encodes $(DESTDIR) so we
++ 	# have to purge it
++ 	rm -f $(symbolic-link-list)
++diff --git a/support/Makefile b/support/Makefile
++index a462781718426d3563c310c5d0f2728969dabf85..e28061328bcf95744b65bbbdd16e682cb8bab6e4 100644
++--- a/support/Makefile
+++++ b/support/Makefile
++@@ -229,17 +229,6 @@ CFLAGS-support_paths.c = \
++ CFLAGS-timespec.c += -fexcess-precision=standard
++ CFLAGS-timespec-time64.c += -fexcess-precision=standard
++ 
++-ifeq (,$(CXX))
++-LINKS_DSO_PROGRAM = links-dso-program-c
++-else
++-LINKS_DSO_PROGRAM = links-dso-program
++-LDLIBS-links-dso-program = -lstdc++ -lgcc -lgcc_s $(libunwind)
++-endif
++-
++-ifeq (yes,$(have-selinux))
++-LDLIBS-$(LINKS_DSO_PROGRAM) += -lselinux
++-endif
++-
++ 
++ LDLIBS-test-container = $(libsupport)
++ 
++@@ -249,9 +238,6 @@ others-noinstall += test-container
++ others += shell-container echo-container true-container
++ others-noinstall += shell-container echo-container true-container
++ 
++-others += $(LINKS_DSO_PROGRAM)
++-others-noinstall += $(LINKS_DSO_PROGRAM)
++-
++ $(objpfx)test-container : $(libsupport)
++ $(objpfx)shell-container : $(libsupport)
++ $(objpfx)echo-container : $(libsupport)
+diff --git a/subprojects/packagefiles/glibc-2.34/meson.build b/subprojects/packagefiles/glibc-2.34/meson.build
+index a5f1aa765282ba1593683e559ea570e1eac1ec40..b0073d7faf1428b7e911699b55d245de1bf94c47 100644
+--- a/subprojects/packagefiles/glibc-2.34/meson.build
++++ b/subprojects/packagefiles/glibc-2.34/meson.build
+@@ -74,6 +74,7 @@ glibc = custom_target('glibc',
+         'glibc-2.34/configure',
+         'glibc-2.34.patch',
+         'hp-timing-2.34.patch',
++        'build-2.34-on-ubuntu22.04.patch',
+     ],
+ 
+     output: glibc_output,
