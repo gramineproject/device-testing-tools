@@ -8,7 +8,7 @@ exec qemu-system-x86_64 \
     -initrd initramfs.cpio.gz \
     -nographic \
     -monitor /dev/null \
-    -cpu host,+smep,+smap \
+    -cpu host \
     -smp 2 \
     -m 1G \
     -append "console=ttyS0 loglevel=3 quiet oops=panic" \

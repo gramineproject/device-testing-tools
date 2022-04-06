@@ -27,6 +27,7 @@ $(QEMU_SRC_DIR)/.configured: $(QEMU_SRC_DIR)/.unpacked
 qemu-system-x86_64: $(QEMU_SRC_DIR)/.configured
 	$(MAKE) -C $(QEMU_SRC_DIR)/build
 	ln -sf $(QEMU_SRC_DIR)/build/qemu-system-x86_64 qemu-system-x86_64
+	@echo 'QEMU was build successfully. You might want to install it globally now, or add this directory to your $$PATH'
 
 .PHONY: clean
 clean:
