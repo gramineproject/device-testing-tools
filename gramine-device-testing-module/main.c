@@ -31,7 +31,7 @@ struct device* device = NULL;
 
 static int gramine_test_dev_open(struct inode* inode, struct file* filp) {
     struct gramine_test_dev_data* data = kmalloc(sizeof(*data), GFP_KERNEL);
-    if (unlikely(!data)) {
+    if (!data) {
         return -ENOMEM;
     }
 
@@ -57,20 +57,20 @@ static ssize_t gramine_test_dev_write(struct file* filp, const char __user* buf,
     size_t end;
     struct gramine_test_dev_data* data;
 
-    if (unlikely(*offp < 0)) {
+    if (*offp < 0) {
         return -EFBIG;
     }
-    if (unlikely(check_add_overflow(size, (size_t)*offp, &end))) {
+    if (check_add_overflow(size, (size_t)*offp, &end)) {
         return -EFBIG;
     }
-    if (unlikely(end > GRAMINE_TEST_DEV_MAX_SIZE)) {
+    if (end > GRAMINE_TEST_DEV_MAX_SIZE) {
         return -EFBIG;
     }
 
     data = filp->private_data;
     if (data->size < end) {
         char* tmp_buf = krealloc(data->buf, end, GFP_KERNEL);
-        if (unlikely(!tmp_buf)) {
+        if (!tmp_buf) {
             return -ENOMEM;
         }
         memset(tmp_buf + data->size, 0, end - data->size);
@@ -92,7 +92,7 @@ static ssize_t gramine_test_dev_read(struct file* filp, char __user* buf, size_t
     struct gramine_test_dev_data* data;
     size_t copy_size;
 
-    if (unlikely(*offp < 0)) {
+    if (*offp < 0) {
         return -EFBIG;
     }
 
