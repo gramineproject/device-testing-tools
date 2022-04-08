@@ -13,7 +13,7 @@
 // TODO: add locking
 
 MODULE_AUTHOR("Gramine Authors");
-MODULE_LICENSE("GPL\x00ish");
+MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Dummy module just for testing purposes");
 
 #define GRAMINE_TEST_DEV_MINOR_NUMS 1
