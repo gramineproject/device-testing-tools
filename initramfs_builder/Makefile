@@ -39,25 +39,23 @@ INIT_FILES := init new_init
 $(addprefix $(INITRAMFS_DIR)/,$(INIT_FILES)): $(INITRAMFS_DIR)/%: % $(INITRAMFS_DIR)/bin/busybox
 	cp $< $@
 
-KERNEL_VER := $(shell uname -r)
-# TODO: generate this with modprobe
-MODULES := kernel/net/9p/9pnet_virtio.ko \
-	kernel/net/9p/9pnet.ko \
-	kernel/fs/9p/9p.ko \
-	kernel/fs/fscache/fscache.ko \
-	kernel/fs/netfs/netfs.ko \
-	kernel/fs/overlayfs/overlay.ko
-MODULES := $(foreach module,$(MODULES),/lib/modules/$(KERNEL_VER)/$(module))
+insert_modules.sh:
+	modprobe --show-depends 9p > $@
+	modprobe --show-depends 9pnet_virtio >> $@
+	modprobe --show-depends overlay >> $@
+	sed -i '/builtin/d' $@
 
-$(addprefix $(INITRAMFS_DIR)/,$(notdir $(MODULES))) &: $(MODULES) $(INITRAMFS_DIR)/bin/busybox
-	cp $(MODULES) $(INITRAMFS_DIR)
+$(INITRAMFS_DIR)/insert_modules.sh: insert_modules.sh $(INITRAMFS_DIR)/bin/busybox
+	mkdir -p $(INITRAMFS_DIR)/modules
+	cp -t $(INITRAMFS_DIR)/modules $(shell sed 's/insmod//' $< 2>/dev/null) || true
+	sed 's/insmod \(.*\)\//insmod \/modules\//' $< > $@
 
-initramfs.cpio.gz: $(addprefix $(INITRAMFS_DIR)/,$(INIT_FILES)) $(addprefix $(INITRAMFS_DIR)/,$(notdir $(MODULES)))
+initramfs.cpio.gz: $(addprefix $(INITRAMFS_DIR)/,$(INIT_FILES)) $(INITRAMFS_DIR)/insert_modules.sh
 	cd $(INITRAMFS_DIR) && find . | cpio -o -H newc -R +0:+0 | gzip -9 > ../$@
 
 .PHONY: clean
 clean:
-	$(RM) -r $(INITRAMFS_DIR) initramfs.cpio.gz
+	$(RM) -r $(INITRAMFS_DIR) initramfs.cpio.gz insert_modules.sh
 
 .PHONY: distclean
 distclean: clean

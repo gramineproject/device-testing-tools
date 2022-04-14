@@ -7,12 +7,7 @@ export HOME=/root
 mkdir -p /dev
 mount -t devtmpfs devtmpfs /dev
 
-insmod netfs.ko
-insmod fscache.ko
-insmod 9pnet.ko
-insmod 9pnet_virtio.ko
-insmod 9p.ko
-insmod overlay.ko
+sh /insert_modules.sh
 
 mkdir /hostfs
 mount -t 9p -o trans=virtio hostfs /hostfs -o version=9p2000.L -o msize=1048576
