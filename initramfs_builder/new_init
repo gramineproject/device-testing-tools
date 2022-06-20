@@ -2,6 +2,9 @@
 
 set -e
 
+mkdir -p /dev/sgx/
+ln -s /dev/sgx_enclave /dev/sgx/enclave || true
+
 setsid /bin/bash -i
 
 poweroff -n -f

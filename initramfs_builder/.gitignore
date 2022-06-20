@@ -1,4 +1,5 @@
 /busybox.tar.bz2
-/src
 /initramfs
 /initramfs.cpio.gz
+/insert_modules.sh
+/src
