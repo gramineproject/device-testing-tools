@@ -1,6 +1,11 @@
 #pragma once
 
+#ifdef __KERNEL__
 #include <linux/ioctl.h>
+#else
+#define __user
+#define loff_t ssize_t
+#endif
 
 struct gramine_test_dev_ioctl_write {
     size_t buf_size;        /* in */

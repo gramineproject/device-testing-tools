@@ -15,6 +15,10 @@ to support SGX. The support was added in Linux v5.15 and QEMU v6.2.0.
 Ubuntu 22.04 comes with both in appropriate versions, so it's the easiest to
 just use it.
 
+Requires Gramine with the commit "[glibc] Migrate to the newest version - 2.35",
+which was merged into upstream on 31. May 2022 and is available from release
+v1.3.1.
+
 QEMU
 ====
 
@@ -40,9 +44,3 @@ Gramine Device Testing Module
 Implemenation of a dummy kernel module, implementing a device which can be
 passed to Gramine to test all required functionality (in particular shared
 untrusted memory and ioctl syscall).
-
-Other issues
-============
-
-Currently Gramine (actually glibc 2.34) does not build on Ubuntu 22.04. You may
-use `gramine_ubuntu22.04.patch` to fix that.
