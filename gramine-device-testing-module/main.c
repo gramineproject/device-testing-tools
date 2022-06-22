@@ -10,6 +10,8 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 
+#include "gramine_test_dev_ioctl.h"
+
 // TODO: add locking
 
 MODULE_AUTHOR("Gramine Authors");
@@ -18,6 +20,8 @@ MODULE_DESCRIPTION("Dummy module just for testing purposes");
 
 #define GRAMINE_TEST_DEV_MINOR_NUMS 1
 #define GRAMINE_TEST_DEV_MAX_SIZE (0x100 * PAGE_SIZE)
+
+#define LIST_ITEMS_MAX 128
 
 struct gramine_test_dev_data {
     size_t size;
@@ -28,6 +32,14 @@ static struct class* gramine_test_dev_class = NULL;
 static dev_t dev_num = 0;
 struct cdev cdev;
 struct device* device = NULL;
+
+static void replace_all_occurences(struct gramine_test_dev_data* data, char src, char dst) {
+    size_t idx;
+    for (idx = 0; idx < data->size; idx++) {
+        if (data->buf[idx] == src)
+            data->buf[idx] = dst;
+    }
+}
 
 static int gramine_test_dev_open(struct inode* inode, struct file* filp) {
     struct gramine_test_dev_data* data = kmalloc(sizeof(*data), GFP_KERNEL);
@@ -110,11 +122,109 @@ static ssize_t gramine_test_dev_read(struct file* filp, char __user* buf, size_t
     return copy_size;
 }
 
+static int gramine_test_dev_replace_arr(struct gramine_test_dev_data* data,
+                                        void __user* argp_user) {
+    size_t i;
+    struct gramine_test_dev_ioctl_replace_arr arg;
+
+    if (copy_from_user(&arg, argp_user, sizeof(arg))) {
+        return -EFAULT;
+    }
+
+    for (i = 0; i < arg.replacements_cnt; i++) {
+        struct gramine_test_dev_ioctl_replace_char replace_char;
+        if (copy_from_user(&replace_char, &arg.replacements_arr[i], sizeof(replace_char))) {
+            return -EFAULT;
+        }
+        replace_all_occurences(data, replace_char.src, replace_char.dst);
+    }
+
+    return 0;
+}
+
+static int gramine_test_dev_replace_list(struct gramine_test_dev_data* data,
+                                         void __user* argp_user) {
+    size_t list_items_cnt = 0;
+    struct gramine_test_dev_ioctl_replace_list __user* list_item_user = argp_user;
+
+    do {
+        struct gramine_test_dev_ioctl_replace_list list_item;
+        if (list_items_cnt++ > LIST_ITEMS_MAX) {
+            return -ELOOP;
+        }
+        if (copy_from_user(&list_item, list_item_user, sizeof(list_item))) {
+            return -EFAULT;
+        }
+        replace_all_occurences(data, list_item.replacement.src, list_item.replacement.dst);
+        list_item_user = list_item.next;
+    } while (list_item_user);
+
+    return 0;
+}
+
+static ssize_t gramine_test_dev_ioctl(struct file *filp, unsigned int cmd, unsigned long argp) {
+    struct gramine_test_dev_data* data = filp->private_data;
+    void __user* argp_user = (void __user*)argp;
+
+    switch (cmd) {
+        case GRAMINE_TEST_DEV_IOCTL_REWIND:
+            return default_llseek(filp, /*offset=0*/0, SEEK_SET);
+        case GRAMINE_TEST_DEV_IOCTL_WRITE: {
+            ssize_t copied;
+            struct gramine_test_dev_ioctl_write arg;
+            if (copy_from_user(&arg, argp_user, sizeof(arg))) {
+                return -EFAULT;
+            }
+            copied = gramine_test_dev_write(filp, arg.buf, arg.buf_size, &arg.off);
+            if (copied < 0) {
+                return copied;
+            }
+            arg.copied = copied;
+            if (copy_to_user(argp_user, &arg, sizeof(arg))) {
+                return -EFAULT;
+            }
+            return 0;
+        }
+        case GRAMINE_TEST_DEV_IOCTL_READ: {
+            ssize_t copied;
+            struct gramine_test_dev_ioctl_read arg;
+            if (copy_from_user(&arg, argp_user, sizeof(arg))) {
+                return -EFAULT;
+            }
+            copied = gramine_test_dev_read(filp, arg.buf, arg.buf_size, &arg.off);
+            if (copied < 0) {
+                return copied;
+            }
+            arg.copied = copied;
+            if (copy_to_user(argp_user, &arg, sizeof(arg))) {
+                return -EFAULT;
+            }
+            return 0;
+        }
+        case GRAMINE_TEST_DEV_IOCTL_GETSIZE:
+            return (ssize_t)data->size;
+        case GRAMINE_TEST_DEV_IOCTL_CLEAR:
+            kfree(data->buf);
+            data->size = 0;
+            data->buf  = NULL;
+            return 0;
+        case GRAMINE_TEST_DEV_IOCTL_REPLACE_ARR:
+            return gramine_test_dev_replace_arr(data, argp_user);
+        case GRAMINE_TEST_DEV_IOCTL_REPLACE_LIST:
+            return gramine_test_dev_replace_list(data, argp_user);
+        default:
+            return -EINVAL;
+    }
+
+    return 0;
+}
+
 static struct file_operations fops = {
     .owner = THIS_MODULE,
     .llseek = default_llseek,
-    .read = gramine_test_dev_read,
     .write = gramine_test_dev_write,
+    .read = gramine_test_dev_read,
+    .unlocked_ioctl = gramine_test_dev_ioctl,
     .open = gramine_test_dev_open,
     .release = gramine_test_dev_release,
 };
