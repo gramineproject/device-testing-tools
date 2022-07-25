@@ -34,7 +34,7 @@ struct gramine_test_dev_ioctl_replace_list {
     struct gramine_test_dev_ioctl_replace_list __user* next;
 };
 
-#define GRAMINE_TEST_DEV_IOCTL_BASE 0x33
+#define GRAMINE_TEST_DEV_IOCTL_BASE 0x81
 
 #define GRAMINE_TEST_DEV_IOCTL_REWIND        _IO(GRAMINE_TEST_DEV_IOCTL_BASE, 0x00)
 #define GRAMINE_TEST_DEV_IOCTL_WRITE       _IOWR(GRAMINE_TEST_DEV_IOCTL_BASE, 0x01, \

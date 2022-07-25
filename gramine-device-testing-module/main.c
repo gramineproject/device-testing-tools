@@ -21,6 +21,8 @@ MODULE_DESCRIPTION("Dummy module just for testing purposes");
 #define GRAMINE_TEST_DEV_MINOR_NUMS 1
 #define GRAMINE_TEST_DEV_MAX_SIZE (0x100 * PAGE_SIZE)
 
+#define LIST_ITEMS_MAX 128
+
 struct gramine_test_dev_data {
     size_t size;
     char* buf;
@@ -141,7 +143,6 @@ static ssize_t gramine_test_dev_ioctl(struct file *filp, unsigned int cmd, unsig
             if (copy_to_user(argp_user, &arg, sizeof(arg))) {
                 return -EFAULT;
             }
-            filp->f_pos = arg.off;
             return 0;
         }
         case GRAMINE_TEST_DEV_IOCTL_READ: {
@@ -158,7 +159,6 @@ static ssize_t gramine_test_dev_ioctl(struct file *filp, unsigned int cmd, unsig
             if (copy_to_user(argp_user, &arg, sizeof(arg))) {
                 return -EFAULT;
             }
-            filp->f_pos = arg.off;
             return 0;
         }
         case GRAMINE_TEST_DEV_IOCTL_GETSIZE:
@@ -186,7 +186,11 @@ static ssize_t gramine_test_dev_ioctl(struct file *filp, unsigned int cmd, unsig
         case GRAMINE_TEST_DEV_IOCTL_REPLACE_LIST: {
             struct gramine_test_dev_ioctl_replace_list list_item;
             struct gramine_test_dev_ioctl_replace_list __user* list_item_user = argp_user;
+            size_t list_items_cnt = 0;
             do {
+                if (list_items_cnt++ > LIST_ITEMS_MAX) {
+                    return -ELOOP;
+                }
                 if (copy_from_user(&list_item, list_item_user, sizeof(list_item))) {
                     return -EFAULT;
                 }
