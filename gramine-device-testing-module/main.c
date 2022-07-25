@@ -10,7 +10,7 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 
-#include "ioctl.h"
+#include "gramine_test_dev_ioctl.h"
 
 // TODO: add locking
 
@@ -32,13 +32,10 @@ struct cdev cdev;
 struct device* device = NULL;
 
 static void replace_all_occurences(struct gramine_test_dev_data* data, char src, char dst) {
-    size_t idx = 0;
-    while (idx < data->size) {
-        if (data->buf[idx] == '\0')
-            break;
+    size_t idx;
+    for (idx = 0; idx < data->size; idx++) {
         if (data->buf[idx] == src)
             data->buf[idx] = dst;
-        idx++;
     }
 }
 
@@ -128,11 +125,11 @@ static ssize_t gramine_test_dev_ioctl(struct file *filp, unsigned int cmd, unsig
     void __user* argp_user = (void __user*)argp;
 
     switch (cmd) {
-        case GRAMINE_IOCTL_REWIND:
+        case GRAMINE_TEST_DEV_IOCTL_REWIND:
             return default_llseek(filp, /*offset=0*/0, SEEK_SET);
-        case GRAMINE_IOCTL_WRITE: {
+        case GRAMINE_TEST_DEV_IOCTL_WRITE: {
             ssize_t copied;
-            struct gramine_ioctl_write arg;
+            struct gramine_test_dev_ioctl_write arg;
             if (copy_from_user(&arg, argp_user, sizeof(arg))) {
                 return -EFAULT;
             }
@@ -144,11 +141,12 @@ static ssize_t gramine_test_dev_ioctl(struct file *filp, unsigned int cmd, unsig
             if (copy_to_user(argp_user, &arg, sizeof(arg))) {
                 return -EFAULT;
             }
+            filp->f_pos = arg.off;
             return 0;
         }
-        case GRAMINE_IOCTL_READ: {
+        case GRAMINE_TEST_DEV_IOCTL_READ: {
             ssize_t copied;
-            struct gramine_ioctl_read arg;
+            struct gramine_test_dev_ioctl_read arg;
             if (copy_from_user(&arg, argp_user, sizeof(arg))) {
                 return -EFAULT;
             }
@@ -160,48 +158,41 @@ static ssize_t gramine_test_dev_ioctl(struct file *filp, unsigned int cmd, unsig
             if (copy_to_user(argp_user, &arg, sizeof(arg))) {
                 return -EFAULT;
             }
+            filp->f_pos = arg.off;
             return 0;
         }
-        case GRAMINE_IOCTL_GETSIZE:
+        case GRAMINE_TEST_DEV_IOCTL_GETSIZE:
             return (ssize_t)data->size;
-        case GRAMINE_IOCTL_CLEAR:
+        case GRAMINE_TEST_DEV_IOCTL_CLEAR:
             kfree(data->buf);
             data->size = 0;
             data->buf  = NULL;
             return 0;
-        case GRAMINE_IOCTL_REPLACE_ARR: {
+        case GRAMINE_TEST_DEV_IOCTL_REPLACE_ARR: {
             size_t i;
-            struct gramine_ioctl_replace_char __user* replace_chars;
-            struct gramine_ioctl_replace_arr arg;
+            struct gramine_test_dev_ioctl_replace_arr arg;
             if (copy_from_user(&arg, argp_user, sizeof(arg))) {
                 return -EFAULT;
             }
-            replace_chars = arg.replacements_arr;
             for (i = 0; i < arg.replacements_cnt; i++) {
-                struct gramine_ioctl_replace_char replace_char;
-                if (copy_from_user(&replace_char, replace_chars, sizeof(replace_char))) {
+                struct gramine_test_dev_ioctl_replace_char replace_char;
+                if (copy_from_user(&replace_char, &arg.replacements_arr[i], sizeof(replace_char))) {
                     return -EFAULT;
                 }
                 replace_all_occurences(data, replace_char.src, replace_char.dst);
-                replace_chars++;
             }
             return 0;
         }
-        case GRAMINE_IOCTL_REPLACE_LIST: {
-            struct gramine_ioctl_replace_char __user* replace_char_next;
-            struct gramine_ioctl_replace_list arg;
-            if (copy_from_user(&arg, argp_user, sizeof(arg))) {
-                return -EFAULT;
-            }
-            replace_char_next = arg.replacements_list;
-            while (replace_char_next) {
-                struct gramine_ioctl_replace_char replace_char;
-                if (copy_from_user(&replace_char, replace_char_next, sizeof(replace_char))) {
+        case GRAMINE_TEST_DEV_IOCTL_REPLACE_LIST: {
+            struct gramine_test_dev_ioctl_replace_list list_item;
+            struct gramine_test_dev_ioctl_replace_list __user* list_item_user = argp_user;
+            do {
+                if (copy_from_user(&list_item, list_item_user, sizeof(list_item))) {
                     return -EFAULT;
                 }
-                replace_all_occurences(data, replace_char.src, replace_char.dst);
-                replace_char_next = replace_char.next;
-            }
+                replace_all_occurences(data, list_item.replacement.src, list_item.replacement.dst);
+                list_item_user = list_item.next;
+            } while (list_item_user);
             return 0;
         }
         default:
