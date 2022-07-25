@@ -184,10 +184,10 @@ static ssize_t gramine_test_dev_ioctl(struct file *filp, unsigned int cmd, unsig
             return 0;
         }
         case GRAMINE_TEST_DEV_IOCTL_REPLACE_LIST: {
-            struct gramine_test_dev_ioctl_replace_list list_item;
             struct gramine_test_dev_ioctl_replace_list __user* list_item_user = argp_user;
             size_t list_items_cnt = 0;
             do {
+                struct gramine_test_dev_ioctl_replace_list list_item;
                 if (list_items_cnt++ > LIST_ITEMS_MAX) {
                     return -ELOOP;
                 }
