@@ -122,6 +122,46 @@ static ssize_t gramine_test_dev_read(struct file* filp, char __user* buf, size_t
     return copy_size;
 }
 
+static int gramine_test_dev_replace_arr(struct gramine_test_dev_data* data,
+                                        void __user* argp_user) {
+    size_t i;
+    struct gramine_test_dev_ioctl_replace_arr arg;
+
+    if (copy_from_user(&arg, argp_user, sizeof(arg))) {
+        return -EFAULT;
+    }
+
+    for (i = 0; i < arg.replacements_cnt; i++) {
+        struct gramine_test_dev_ioctl_replace_char replace_char;
+        if (copy_from_user(&replace_char, &arg.replacements_arr[i], sizeof(replace_char))) {
+            return -EFAULT;
+        }
+        replace_all_occurences(data, replace_char.src, replace_char.dst);
+    }
+
+    return 0;
+}
+
+static int gramine_test_dev_replace_list(struct gramine_test_dev_data* data,
+                                         void __user* argp_user) {
+    size_t list_items_cnt = 0;
+    struct gramine_test_dev_ioctl_replace_list __user* list_item_user = argp_user;
+
+    do {
+        struct gramine_test_dev_ioctl_replace_list list_item;
+        if (list_items_cnt++ > LIST_ITEMS_MAX) {
+            return -ELOOP;
+        }
+        if (copy_from_user(&list_item, list_item_user, sizeof(list_item))) {
+            return -EFAULT;
+        }
+        replace_all_occurences(data, list_item.replacement.src, list_item.replacement.dst);
+        list_item_user = list_item.next;
+    } while (list_item_user);
+
+    return 0;
+}
+
 static ssize_t gramine_test_dev_ioctl(struct file *filp, unsigned int cmd, unsigned long argp) {
     struct gramine_test_dev_data* data = filp->private_data;
     void __user* argp_user = (void __user*)argp;
@@ -168,37 +208,10 @@ static ssize_t gramine_test_dev_ioctl(struct file *filp, unsigned int cmd, unsig
             data->size = 0;
             data->buf  = NULL;
             return 0;
-        case GRAMINE_TEST_DEV_IOCTL_REPLACE_ARR: {
-            size_t i;
-            struct gramine_test_dev_ioctl_replace_arr arg;
-            if (copy_from_user(&arg, argp_user, sizeof(arg))) {
-                return -EFAULT;
-            }
-            for (i = 0; i < arg.replacements_cnt; i++) {
-                struct gramine_test_dev_ioctl_replace_char replace_char;
-                if (copy_from_user(&replace_char, &arg.replacements_arr[i], sizeof(replace_char))) {
-                    return -EFAULT;
-                }
-                replace_all_occurences(data, replace_char.src, replace_char.dst);
-            }
-            return 0;
-        }
-        case GRAMINE_TEST_DEV_IOCTL_REPLACE_LIST: {
-            struct gramine_test_dev_ioctl_replace_list __user* list_item_user = argp_user;
-            size_t list_items_cnt = 0;
-            do {
-                struct gramine_test_dev_ioctl_replace_list list_item;
-                if (list_items_cnt++ > LIST_ITEMS_MAX) {
-                    return -ELOOP;
-                }
-                if (copy_from_user(&list_item, list_item_user, sizeof(list_item))) {
-                    return -EFAULT;
-                }
-                replace_all_occurences(data, list_item.replacement.src, list_item.replacement.dst);
-                list_item_user = list_item.next;
-            } while (list_item_user);
-            return 0;
-        }
+        case GRAMINE_TEST_DEV_IOCTL_REPLACE_ARR:
+            return gramine_test_dev_replace_arr(data, argp_user);
+        case GRAMINE_TEST_DEV_IOCTL_REPLACE_LIST:
+            return gramine_test_dev_replace_list(data, argp_user);
         default:
             return -EINVAL;
     }
