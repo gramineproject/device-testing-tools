@@ -3,9 +3,11 @@
 #ifdef __KERNEL__
 #include <linux/ioctl.h>
 #else
+#ifndef __user
 #define __user
-#define loff_t ssize_t
 #endif
+#include <sys/types.h> /* for loff_t */
+#endif /* __KERNEL__ */
 
 struct gramine_test_dev_ioctl_write {
     size_t buf_size;        /* in */
