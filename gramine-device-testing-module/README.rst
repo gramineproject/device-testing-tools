@@ -2,20 +2,13 @@
 Gramine Device Testing Module
 *****************************
 
+.. highlight:: sh
+
 A kernel module, implementing a device which can be passed to Gramine to test
 all required functionality (e.g shared untrusted memory and ioctl syscall).
 
-.. highlight:: sh
-
-Installing header
-=================
-
-The header `gramine_test_dev_ioctl.h` must be installed on the system in order
-for userspace programs to use the new IOCTLs. Do it manually:
-
-    sudo cp gramine_test_dev_ioctl.h /usr/local/include/
-
-Now programs may include this header via `#include <gramine_test_dev_ioctl.h>`.
+Userspace programs should include the header `gramine_test_dev_ioctl.h` to use
+the device's IOCTLs. The header is installed at `/usr/local/include`.
 
 Features
 ========

@@ -6,6 +6,7 @@
 #ifndef __user
 #define __user
 #endif
+#include <sys/ioctl.h>
 #include <sys/types.h> /* for loff_t */
 #endif /* __KERNEL__ */
 
