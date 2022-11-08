@@ -29,4 +29,4 @@ mount -t tmpfs tmpfs /newroot/tmp
 umount -l /dev
 cd /newroot
 mount --move . /
-exec chroot . /init
+exec /bin/busybox chroot . /init
