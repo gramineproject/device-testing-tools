@@ -1,0 +1,26 @@
+#!/bin/sh
+
+set -e
+
+echo "PREP STARTING"
+
+. "/leeroy/files_for_vm/envs"
+cd $(cat "/leeroy/files_for_vm/pwd")
+
+cd device-testing-tools/gramine-device-testing-module
+cp -f gramine_test_dev_ioctl.h /usr/local/include/
+insmod gramine-testing-dev.ko
+cd -
+
+echo "PREP DONE"
+
+cd libos/test/regression
+gramine-test build -v device_ioctl
+gramine-test build --sgx -v device_ioctl
+gramine-direct device_ioctl
+gramine-sgx device_ioctl
+cd -
+
+echo "TESTS OK"
+
+poweroff -n -f
