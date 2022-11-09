@@ -1,17 +1,17 @@
 #!/bin/sh
 
-set -e
+set -ex
 
 exec qemu-system-x86_64 \
     -enable-kvm \
     -kernel /boot/vmlinuz-$(uname -r) \
-    -initrd initramfs.cpio.gz \
+    -initrd ${1:-initramfs.cpio.gz} \
     -nographic \
     -monitor /dev/null \
     -cpu host \
     -smp 2 \
     -m 1G \
-    -append "console=ttyS0 loglevel=3 quiet oops=panic" \
+    -append "console=ttyS0 loglevel=3 quiet oops=panic PWD_FOR_VM=\"${2:-$PWD}\"" \
     -device virtio-rng-pci \
     -virtfs 'local,path=/,id=hostfs,mount_tag=hostfs,security_model=none,readonly=on' \
     -device 'virtio-9p-pci,fsdev=hostfs,mount_tag=hostfs' \

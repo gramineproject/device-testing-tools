@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# this new_init with a Bash shell can be used for manual testing
+
+set -e
+
+setsid /bin/bash -i
+
+poweroff -n -f

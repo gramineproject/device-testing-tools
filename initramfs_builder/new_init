@@ -1,7 +1,38 @@
 #!/bin/sh
 
-set -e
+set -ex
 
-setsid /bin/bash -i
+echo "PREP STARTING"
+
+# QEMU appends `PWD_FOR_VM=<current Jenkins working dir>` to Linux command line
+cd $PWD_FOR_VM
+. "$PWD/envs"
+
+# to find insmod and poweroff programs (default PATH doesn't have `/sbin`)
+export PATH="/sbin:$PATH"
+
+if test -n "$SGX"; then
+    GRAMINE=gramine-sgx
+else
+    GRAMINE=gramine-direct
+fi
+
+(
+    cd device-testing-tools/gramine-device-testing-module
+    insmod gramine-testing-dev.ko
+)
+echo "PREP DONE"
+
+(
+    # run only couple tests -- executing in a VM with virtio-9p-pci FS passthrough is very slow
+    cd libos/test/regression
+
+    gramine-test build helloworld
+    $GRAMINE helloworld
+
+    gramine-test build device_ioctl
+    $GRAMINE device_ioctl
+)
+echo "TESTS OK"
 
 poweroff -n -f
