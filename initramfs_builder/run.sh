@@ -11,7 +11,7 @@ exec qemu-system-x86_64 \
     -cpu host \
     -smp 2 \
     -m 1G \
-    -append "console=ttyS0 loglevel=3 quiet oops=panic" \
+    -append "console=ttyS0 loglevel=3 quiet oops=panic $*" \
     -device virtio-rng-pci \
     -virtfs 'local,path=/,id=hostfs,mount_tag=hostfs,security_model=none,readonly=on' \
     -device 'virtio-9p-pci,fsdev=hostfs,mount_tag=hostfs' \
