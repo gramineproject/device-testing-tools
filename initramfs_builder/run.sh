@@ -2,6 +2,8 @@
 
 set -e
 
+# the `-append ... $*` snippet can't handle environment variables with spaces in them, but kernel
+# args (host paths and 0/1 values) are not supposed to have spaces anyway
 exec qemu-system-x86_64 \
     -enable-kvm \
     -kernel /boot/vmlinuz-$(uname -r) \
@@ -11,7 +13,7 @@ exec qemu-system-x86_64 \
     -cpu host \
     -smp 2 \
     -m 1G \
-    -append "console=ttyS0 loglevel=3 quiet oops=panic" \
+    -append "console=ttyS0 loglevel=3 quiet oops=panic $*" \
     -device virtio-rng-pci \
     -virtfs 'local,path=/,id=hostfs,mount_tag=hostfs,security_model=none,readonly=on' \
     -device 'virtio-9p-pci,fsdev=hostfs,mount_tag=hostfs' \
