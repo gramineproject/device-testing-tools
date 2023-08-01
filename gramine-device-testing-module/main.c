@@ -212,6 +212,27 @@ static ssize_t gramine_test_dev_ioctl(struct file *filp, unsigned int cmd, unsig
             return gramine_test_dev_replace_arr(data, argp_user);
         case GRAMINE_TEST_DEV_IOCTL_REPLACE_LIST:
             return gramine_test_dev_replace_list(data, argp_user);
+        case GRAMINE_TEST_DEV_IOCTL_GET_SET_SIZE: {
+            struct gramine_test_dev_ioctl_get_set_size arg;
+            if (copy_from_user(&arg, argp_user, sizeof(arg))) {
+                return -EFAULT;
+            }
+            if (arg.do_set) {
+                if (arg.size != 0) {
+                    /* currently can only set the size to zero (i.e. clear the buffer) */
+                    return -EINVAL;
+                }
+                kfree(data->buf);
+                data->size = 0;
+                data->buf  = NULL;
+                return 0;
+            }
+            arg.size = data->size;
+            if (copy_to_user(argp_user, &arg, sizeof(arg))) {
+                return -EFAULT;
+            }
+            return 0;
+        }
         default:
             return -EINVAL;
     }
