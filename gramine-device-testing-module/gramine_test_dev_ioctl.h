@@ -42,6 +42,12 @@ struct gramine_test_dev_ioctl_replace_list {
     struct gramine_test_dev_ioctl_replace_list __user* next;
 };
 
+struct gramine_test_dev_ioctl_get_set_size {
+    uint8_t do_set; /* 1 means set the size, 0 means get the size */
+    uint8_t pad[7];
+    size_t size;    /* in if set the size, out if get the size */
+};
+
 #define GRAMINE_TEST_DEV_IOCTL_BASE 0x81
 
 #define GRAMINE_TEST_DEV_IOCTL_REWIND        _IO(GRAMINE_TEST_DEV_IOCTL_BASE, 0x00)
@@ -55,3 +61,5 @@ struct gramine_test_dev_ioctl_replace_list {
                                                  struct gramine_test_dev_ioctl_replace_arr)
 #define GRAMINE_TEST_DEV_IOCTL_REPLACE_LIST _IOW(GRAMINE_TEST_DEV_IOCTL_BASE, 0x06, \
                                                  struct gramine_test_dev_ioctl_replace_list)
+#define GRAMINE_TEST_DEV_IOCTL_GET_SET_SIZE  _IOWR(GRAMINE_TEST_DEV_IOCTL_BASE, 0x07, \
+                                                   struct gramine_test_dev_ioctl_get_set_size)
