@@ -35,3 +35,5 @@ all necessary data, and allows for the following operations:
   - `GRAMINE_TEST_DEV_IOCTL_REPLACE_LIST` - same as
     `GRAMINE_TEST_DEV_IOCTL_REPLACE_ARR` but character replacements are passed
     as a NULL-terminated list.
+  - `GRAMINE_TEST_DEV_IOCTL_GET_SET_SIZE` - Gets or sets the size of the byte
+    array. The size can be set only to zero (same behavior as `_CLEAR`).
