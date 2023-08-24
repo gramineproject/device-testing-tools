@@ -43,9 +43,9 @@ struct gramine_test_dev_ioctl_replace_list {
 };
 
 struct gramine_test_dev_ioctl_get_set_size {
-    char do_set; /* 1 means set the size, 0 means get the size */
-    char pad[7];
-    size_t size; /* in if set the size, out if get the size */
+    uint8_t do_set; /* 1 means set the size, 0 means get the size */
+    uint8_t pad[7];
+    size_t size;    /* in if set the size, out if get the size */
 };
 
 #define GRAMINE_TEST_DEV_IOCTL_BASE 0x81
