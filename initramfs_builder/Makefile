@@ -44,6 +44,7 @@ $(addprefix $(INITRAMFS_DIR)/,$(INIT_FILES)): $(INITRAMFS_DIR)/%: % $(INITRAMFS_
 insert_modules.sh:
 	modprobe --show-depends 9p > $@
 	modprobe --show-depends 9pnet_virtio >> $@
+	modprobe --show-depends virtio_pci >> $@
 	modprobe --show-depends overlay >> $@
 	sed -i '/builtin/d' $@
 
