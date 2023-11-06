@@ -9,6 +9,7 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/slab.h>
+#include <linux/version.h>
 
 #include "gramine_test_dev_ioctl.h"
 
@@ -272,7 +273,11 @@ static int gramine_test_dev_change_perms_uevent(struct device* dev, struct kobj_
 static int __init gramine_test_dev_init_module(void) {
     int ret;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
+    gramine_test_dev_class = class_create(GRAMINE_TEST_DEV_NAME);
+#else
     gramine_test_dev_class = class_create(THIS_MODULE, GRAMINE_TEST_DEV_NAME);
+#endif
     if (IS_ERR(gramine_test_dev_class)) {
         ret = PTR_ERR(gramine_test_dev_class);
         gramine_test_dev_class = NULL;
